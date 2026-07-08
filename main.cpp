@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -6,7 +7,7 @@
 #include <utility>
 
 #include "bpe.hpp"
-#include "glaze/glaze.hpp"
+#include "glaze/glaze.hpp" // IWYU pragma: keep
 
 // clang-format off
 // {
@@ -28,13 +29,13 @@ struct Entry {
     std::string red_pajama_subset;
 };
 
-std::map<std::string, int> getVocab(std::string text) {
+std::map<std::vector<int>, int> getVocab(std::string text) {
     auto words =
         text | std::views::split(' ') |
         std::views::filter([](auto &&subrange) { return !subrange.empty(); }) |
-        std::ranges::to<std::vector<std::string>>();
+        std::ranges::to<std::vector<std::vector<int>>>();
 
-    std::map<std::string, int> vocab;
+    std::map<std::vector<int>, int> vocab;
     for (const auto &word : words) {
         vocab[word] += 1;
     }
@@ -65,8 +66,19 @@ int main() {
 
     std::string text = readJsonEntry(input).value();
     auto vocab = getVocab(text);
-    auto pair_counts = BPE::getStats(vocab);
-    std::cout << pair_counts[{'a', 'b'}] << std::endl;
+
+    auto numMerges = 10;
+    for (int i = 0; i < numMerges; ++i) {
+        auto pair_counts = BPE::getStats(vocab);
+        auto best = std::max_element(pair_counts.begin(), pair_counts.end(),
+                                     [](const auto &a, const auto &b) {
+                                         return a.second < b.second;
+                                     })
+                        ->first;
+        std::cout << "Merging `" << best.first << "," << best.second << "`"
+                  << std::endl;
+        vocab = BPE::mergeVocab(best, vocab);
+    }
 
     return 0;
 }
