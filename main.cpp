@@ -67,7 +67,7 @@ int main() {
     std::string text = readJsonEntry(input).value();
     auto vocab = getVocab(text);
 
-    auto numMerges = 10;
+    auto numMerges = 100;
     for (int i = 0; i < numMerges; ++i) {
         auto pair_counts = BPE::getStats(vocab);
         auto best = std::max_element(pair_counts.begin(), pair_counts.end(),
@@ -75,8 +75,8 @@ int main() {
                                          return a.second < b.second;
                                      })
                         ->first;
-        std::cout << "Merging `" << best.first << "," << best.second << "`"
-                  << std::endl;
+        std::cout << "Merging `" << BPE::getTokenString(best.first) << ","
+                  << BPE::getTokenString(best.second) << "`" << std::endl;
         vocab = BPE::mergeVocab(best, vocab);
     }
 

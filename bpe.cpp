@@ -16,6 +16,20 @@ BPE::mergeVocab(std::pair<int, int> pair,
                 std::map<std::vector<int>, int> vocab) {
     std::map<std::vector<int>, int> newVocab;
     int mergedToken = BPE::nextUniqueToken++;
+
+    std::string l, r;
+    if (pair.first < 0x10000) {
+        l = static_cast<char>(pair.first);
+    } else {
+        l = BPE::tokenToString[pair.first];
+    }
+    if (pair.second < 0x10000) {
+        r = static_cast<char>(pair.second);
+    } else {
+        r = BPE::tokenToString[pair.second];
+    }
+    BPE::tokenToString[mergedToken] = l + r;
+
     for (const auto &[word, freq] : vocab) {
         // if pair in word, replace with unique token
         std::vector<int> newWord;
