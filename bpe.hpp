@@ -23,4 +23,6 @@ class BPE {
             return tokenToString[token];
         }
     }
+
+    static int getTokenCount() { return nextUniqueToken; }
 };

@@ -30,10 +30,17 @@ struct Entry {
 };
 
 std::map<std::vector<int>, int> getVocab(std::string text) {
-    auto words =
-        text | std::views::split(' ') |
-        std::views::filter([](auto &&subrange) { return !subrange.empty(); }) |
-        std::ranges::to<std::vector<std::vector<int>>>();
+    auto words = text | std::views::chunk_by([](char a, char b) {
+                     return !std::isspace(static_cast<unsigned char>(a)) &&
+                            !std::isspace(static_cast<unsigned char>(b));
+                 }) |
+                 std::views::filter([](auto chunk) {
+                     return !std::isspace(static_cast<unsigned char>(chunk[0]));
+                 }) |
+                 std::views::transform([](auto chunk) {
+                     return std::vector<int>(chunk.begin(), chunk.end());
+                 }) |
+                 std::ranges::to<std::vector<std::vector<int>>>();
 
     std::map<std::vector<int>, int> vocab;
     for (const auto &word : words) {
@@ -67,18 +74,26 @@ int main() {
     std::string text = readJsonEntry(input).value();
     auto vocab = getVocab(text);
 
-    auto numMerges = 100;
-    for (int i = 0; i < numMerges; ++i) {
+    const int max_tokens = 128000;
+    while (BPE::getTokenCount() < max_tokens) {
         auto pair_counts = BPE::getStats(vocab);
+        if (pair_counts.empty()) {
+            std::cout << "Exhausted possible merges at " << BPE::getTokenCount()
+                      << " tokens." << std::endl;
+            break;
+        }
         auto best = std::max_element(pair_counts.begin(), pair_counts.end(),
                                      [](const auto &a, const auto &b) {
                                          return a.second < b.second;
                                      })
                         ->first;
-        std::cout << "Merging `" << BPE::getTokenString(best.first) << ","
-                  << BPE::getTokenString(best.second) << "`" << std::endl;
         vocab = BPE::mergeVocab(best, vocab);
     }
+
+    for (int i = 0x10000; i < BPE::getTokenCount(); ++i) {
+        std::cout << BPE::getTokenString(i) << " ";
+    }
+    std::cout << std::endl;
 
     return 0;
 }
