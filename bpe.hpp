@@ -1,7 +1,15 @@
 #include <map>
+#include <queue>
 #include <string>
 #include <utility>
 #include <vector>
+
+struct TkPair {
+    std::pair<int, int> pair;
+    int freq;
+
+    bool operator<(const TkPair &other) const { return freq < other.freq; }
+};
 
 class BPE {
   private:
@@ -10,8 +18,10 @@ class BPE {
     static inline std::map<int, std::string> tokenToString;
 
   public:
-    static std::map<std::pair<int, int>, int>
-    getStats(std::map<std::vector<int>, int> vocab);
+    static inline std::priority_queue<TkPair> statHeap;
+    static inline std::map<std::pair<int, int>, int> invalidPairs;
+
+    static void initStats(std::map<std::vector<int>, int> vocab);
 
     static std::map<std::vector<int>, int>
     mergeVocab(std::pair<int, int> pair, std::map<std::vector<int>, int> vocab);

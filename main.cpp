@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -74,20 +73,26 @@ int main() {
     std::string text = readJsonEntry(input).value();
     auto vocab = getVocab(text);
 
-    const int max_tokens = 128000;
+    const int max_tokens = 0xFFFF + 128;
+    BPE::initStats(vocab);
     while (BPE::getTokenCount() < max_tokens) {
-        auto pair_counts = BPE::getStats(vocab);
-        if (pair_counts.empty()) {
+        if (BPE::statHeap.empty()) {
             std::cout << "Exhausted possible merges at " << BPE::getTokenCount()
                       << " tokens." << std::endl;
             break;
         }
-        auto best = std::max_element(pair_counts.begin(), pair_counts.end(),
-                                     [](const auto &a, const auto &b) {
-                                         return a.second < b.second;
-                                     })
-                        ->first;
-        vocab = BPE::mergeVocab(best, vocab);
+
+        auto best = BPE::statHeap.top();
+        if (BPE::invalidPairs.contains(best.pair) &&
+            BPE::invalidPairs[best.pair] == best.freq) {
+            // lazy deletion of invalid pairs
+            BPE::statHeap.pop();
+            BPE::invalidPairs.erase(best.pair);
+            continue;
+        }
+
+        BPE::statHeap.pop();
+        vocab = BPE::mergeVocab(best.pair, vocab);
     }
 
     for (int i = 0x10000; i < BPE::getTokenCount(); ++i) {
