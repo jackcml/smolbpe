@@ -6,32 +6,32 @@ void BPE::initStats(std::map<std::vector<int>, int> vocab) {
     for (const auto &[word, freq] : vocab) {
         for (size_t i = 1; i < word.size(); ++i) {
             std::pair<int, int> pair = {word[i - 1], word[i]};
-            pairFreq[pair] += freq;
-            BPE::wordsWithPair[pair].insert(word);
+            m_pairFreq[pair] += freq;
+            m_wordsWithPair[pair].insert(word);
         }
     }
 }
 
 void BPE::mergeVocab(std::pair<int, int> pair,
                      std::map<std::vector<int>, int> &vocab) {
-    int mergedToken = BPE::nextUniqueToken++;
+    int mergedToken = m_nextUniqueToken++;
 
     std::string l, r;
     if (pair.first < 0x10000) {
         l = static_cast<char>(pair.first);
     } else {
-        l = BPE::tokenToString[pair.first];
+        l = m_tokenToString[pair.first];
     }
     if (pair.second < 0x10000) {
         r = static_cast<char>(pair.second);
     } else {
-        r = BPE::tokenToString[pair.second];
+        r = m_tokenToString[pair.second];
     }
-    BPE::tokenToString[mergedToken] = l + r;
+    m_tokenToString[mergedToken] = l + r;
 
     int mergeCount = 0;
-    std::set<std::vector<int>> words = BPE::wordsWithPair[pair]; // snapshot
-    BPE::wordsWithPair.erase(pair); // pair no longer exists after this merge
+    std::set<std::vector<int>> words = m_wordsWithPair[pair]; // snapshot
+    m_wordsWithPair.erase(pair); // pair no longer exists after this merge
     for (const auto &word : words) {
         auto freq = vocab[word];
 
@@ -47,11 +47,11 @@ void BPE::mergeVocab(std::pair<int, int> pair,
 
                 // for pair {a,b}, we're removing the left neighbor {x,a}
                 if (i >= 2) {
-                    --pairFreq[{word[i - 2], word[i - 1]}];
+                    --m_pairFreq[{word[i - 2], word[i - 1]}];
                 }
                 // and the right neighbor {b,y}
                 if (i + 1 < word.size()) {
-                    --pairFreq[{word[i], word[i + 1]}];
+                    --m_pairFreq[{word[i], word[i + 1]}];
                 }
             } else {
                 newWord.push_back(word[i]);
@@ -62,7 +62,7 @@ void BPE::mergeVocab(std::pair<int, int> pair,
         for (size_t i = 1; i < newWord.size(); ++i) {
             if (newWord[i - 1] == mergedToken || newWord[i] == mergedToken) {
                 std::pair<int, int> newPair = {newWord[i - 1], newWord[i]};
-                pairFreq[newPair] += freq;
+                m_pairFreq[newPair] += freq;
             }
         }
 
@@ -70,29 +70,29 @@ void BPE::mergeVocab(std::pair<int, int> pair,
         vocab.erase(word);
 
         for (size_t i = 1; i < word.size(); ++i) {
-            wordsWithPair[{word[i - 1], word[i]}].erase(word);
+            m_wordsWithPair[{word[i - 1], word[i]}].erase(word);
         }
         // add the new word to all its pairs' sets
         for (size_t i = 1; i < newWord.size(); ++i) {
-            wordsWithPair[{newWord[i - 1], newWord[i]}].insert(newWord);
+            m_wordsWithPair[{newWord[i - 1], newWord[i]}].insert(newWord);
         }
     }
 }
 
 void BPE::run(std::map<std::vector<int>, int> vocab, int max_tokens) {
-    BPE::initStats(vocab);
-    while (BPE::getTokenCount() < max_tokens) {
+    this->initStats(vocab);
+    while (this->getTokenCount() < max_tokens) {
         auto it = std::max_element(
-            BPE::pairFreq.begin(), BPE::pairFreq.end(),
+            m_pairFreq.begin(), m_pairFreq.end(),
             [](const auto &a, const auto &b) { return a.second < b.second; });
-        if (it == BPE::pairFreq.end()) {
-            std::cout << "Exhausted possible merges at " << BPE::getTokenCount()
-                      << " tokens." << std::endl;
+        if (it == m_pairFreq.end()) {
+            std::cout << "Exhausted possible merges at "
+                      << this->getTokenCount() << " tokens." << std::endl;
             break;
         }
 
         auto &[pair, freq] = *it;
-        BPE::mergeVocab(pair, vocab);
-        BPE::pairFreq.erase(pair);
+        this->mergeVocab(pair, vocab);
+        m_pairFreq.erase(pair);
     }
 }

@@ -74,10 +74,11 @@ int main() {
     }
 
     const int max_tokens = 0xFFFF + 5000;
-    BPE::run(vocab, max_tokens);
+    BPE bpe = BPE();
+    bpe.run(vocab, max_tokens);
 
-    for (int i = 0x10000; i < BPE::getTokenCount(); ++i) {
-        std::cout << BPE::getTokenString(i) << " ";
+    for (int i = 0x10000; i < bpe.getTokenCount(); ++i) {
+        std::cout << bpe.getTokenString(i) << " ";
     }
     std::cout << std::endl;
 
