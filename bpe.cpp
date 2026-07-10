@@ -3,15 +3,16 @@
 void BPE::initStats(std::map<std::vector<int>, int> vocab) {
     for (const auto &[word, freq] : vocab) {
         for (size_t i = 1; i < word.size(); ++i) {
-            BPE::statHeap.push({{word[i - 1], word[i]}, freq});
+            std::pair<int, int> pair = {word[i-1], word[i]};
+            BPE::statHeap.push({pair, freq});
+            BPE::wordsWithPair[pair].insert(word);
         }
     }
 }
 
-std::map<std::vector<int>, int>
+void
 BPE::mergeVocab(std::pair<int, int> pair,
-                std::map<std::vector<int>, int> vocab) {
-    std::map<std::vector<int>, int> newVocab;
+                std::map<std::vector<int>, int>& vocab) {
     int mergedToken = BPE::nextUniqueToken++;
 
     std::string l, r;
@@ -28,7 +29,10 @@ BPE::mergeVocab(std::pair<int, int> pair,
     BPE::tokenToString[mergedToken] = l + r;
 
     int mergeCount = 0;
-    for (const auto &[word, freq] : vocab) {
+    std::set<std::vector<int>> newWordsWithPair;
+    for (const auto &word : BPE::wordsWithPair[pair]) {
+        auto freq = vocab[word];
+
         // if pair in word, replace with unique token
         std::vector<int> newWord;
         newWord.reserve(word.size());
@@ -46,12 +50,15 @@ BPE::mergeVocab(std::pair<int, int> pair,
         // new adjacencies created in this word
         for (size_t i = 1; i < newWord.size(); ++i) {
             if (newWord[i - 1] == mergedToken || newWord[i] == mergedToken) {
-                BPE::statHeap.push({{newWord[i - 1], newWord[i]}, freq});
+                std::pair<int, int> newPair = {newWord[i - 1], newWord[i]};
+                BPE::statHeap.push({newPair, freq});
+                newWordsWithPair.insert(newWord);
             } 
         }
 
-        newVocab[newWord] += freq;
+        vocab[newWord] += freq;
+        vocab.erase(word);
     }
 
-    return newVocab;
+    BPE::wordsWithPair[pair] = newWordsWithPair;
 }

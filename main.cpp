@@ -92,7 +92,7 @@ int main() {
         }
 
         BPE::statHeap.pop();
-        vocab = BPE::mergeVocab(best.pair, vocab);
+        BPE::mergeVocab(best.pair, vocab);
     }
 
     for (int i = 0x10000; i < BPE::getTokenCount(); ++i) {
