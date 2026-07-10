@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(${PROJECT_NAME} main.cpp bpe.cpp)
+add_executable(${PROJECT_NAME} main.cpp bpe.cpp mutable_priority_map.hpp)
 
 include(FetchContent)
 

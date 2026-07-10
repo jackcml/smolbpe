@@ -4,13 +4,24 @@
 #include <utility>
 #include <vector>
 
+#include "mutable_priority_map.hpp"
+
+struct PairHash {
+    std::size_t operator()(const std::pair<int, int> &p) const noexcept {
+        const std::size_t h1 = std::hash<int>{}(p.first);
+        const std::size_t h2 = std::hash<int>{}(p.second);
+
+        return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+    }
+};
+
 class BPE {
   private:
     int m_nextUniqueToken =
         0x10000; // start > all char values to prevent collisions
     std::map<int, std::string> m_tokenToString;
     std::map<std::pair<int, int>, std::set<std::vector<int>>> m_wordsWithPair;
-    std::map<std::pair<int, int>, int> m_pairFreq;
+    MutablePriorityMap<std::pair<int, int>, int, PairHash> m_pairFreq;
 
   public:
     void run(std::map<std::vector<int>, int> vocab, int max_tokens);

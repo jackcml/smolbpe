@@ -1,12 +1,12 @@
 #include "bpe.hpp"
-#include <algorithm>
 #include <iostream>
 
 void BPE::initStats(std::map<std::vector<int>, int> vocab) {
     for (const auto &[word, freq] : vocab) {
         for (size_t i = 1; i < word.size(); ++i) {
             std::pair<int, int> pair = {word[i - 1], word[i]};
-            m_pairFreq[pair] += freq;
+            m_pairFreq.insert_or_assign(pair,
+                                        m_pairFreq.at(pair).value_or(0) + freq);
             m_wordsWithPair[pair].insert(word);
         }
     }
@@ -47,11 +47,15 @@ void BPE::mergeVocab(std::pair<int, int> pair,
 
                 // for pair {a,b}, we're removing the left neighbor {x,a}
                 if (i >= 2) {
-                    --m_pairFreq[{word[i - 2], word[i - 1]}];
+                    std::pair<int, int> left = {word[i - 2], word[i - 1]};
+                    m_pairFreq.insert_or_assign(
+                        left, m_pairFreq.at(left).value_or(0) - 1);
                 }
                 // and the right neighbor {b,y}
                 if (i + 1 < word.size()) {
-                    --m_pairFreq[{word[i], word[i + 1]}];
+                    std::pair<int, int> right = {word[i], word[i + 1]};
+                    m_pairFreq.insert_or_assign(
+                        right, m_pairFreq.at(right).value_or(0) - 1);
                 }
             } else {
                 newWord.push_back(word[i]);
@@ -62,7 +66,8 @@ void BPE::mergeVocab(std::pair<int, int> pair,
         for (size_t i = 1; i < newWord.size(); ++i) {
             if (newWord[i - 1] == mergedToken || newWord[i] == mergedToken) {
                 std::pair<int, int> newPair = {newWord[i - 1], newWord[i]};
-                m_pairFreq[newPair] += freq;
+                m_pairFreq.insert_or_assign(
+                    newPair, m_pairFreq.at(newPair).value_or(0) + freq);
             }
         }
 
@@ -82,16 +87,13 @@ void BPE::mergeVocab(std::pair<int, int> pair,
 void BPE::run(std::map<std::vector<int>, int> vocab, int max_tokens) {
     initStats(vocab);
     while (getTokenCount() < max_tokens) {
-        auto it = std::max_element(
-            m_pairFreq.begin(), m_pairFreq.end(),
-            [](const auto &a, const auto &b) { return a.second < b.second; });
-        if (it == m_pairFreq.end()) {
-            std::cout << "Exhausted possible merges at "
-                      << getTokenCount() << " tokens." << std::endl;
+        if (m_pairFreq.empty()) {
+            std::cout << "Exhausted possible merges at " << getTokenCount()
+                      << " tokens." << std::endl;
             break;
         }
 
-        auto &[pair, freq] = *it;
+        auto [pair, freq] = m_pairFreq.max();
         mergeVocab(pair, vocab);
         m_pairFreq.erase(pair);
     }
