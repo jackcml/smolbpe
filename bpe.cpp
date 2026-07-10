@@ -43,7 +43,12 @@ void BPE::mergeVocab(std::pair<int, int> pair,
                 ++i; // skip the next token since it's merged
                 ++mergeCount;
 
-                --pairFreq[{word[i-1], word[i]}];
+                if (i > 0) {
+                    --pairFreq[{word[i-1], word[i]}];
+                }
+                if (i + 2 < word.size()) {
+                    --pairFreq[{word[i+1], word[i+2]}];
+                }
             } else {
                 newWord.push_back(word[i]);
             }
@@ -60,5 +65,10 @@ void BPE::mergeVocab(std::pair<int, int> pair,
 
         vocab[newWord] += freq;
         vocab.erase(word);
+    }
+
+    pairFreq[pair] = 0; // all merged away
+    for (const auto &newWord: newWordsWithPair) {
+        wordsWithPair[pair].insert(newWord);
     }
 }
