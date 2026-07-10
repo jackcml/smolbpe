@@ -1,5 +1,4 @@
 #include <map>
-#include <queue>
 #include <set>
 #include <string>
 #include <utility>
@@ -21,8 +20,7 @@ class BPE {
         wordsWithPair;
 
   public:
-    static inline std::priority_queue<TkPair> statHeap;
-    static inline std::map<std::pair<int, int>, int> invalidPairs;
+    static inline std::map<std::pair<int, int>, int> pairFreq;
 
     static void initStats(std::map<std::vector<int>, int> vocab);
 
