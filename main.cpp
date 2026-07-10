@@ -28,7 +28,7 @@ struct Entry {
     std::string red_pajama_subset;
 };
 
-std::map<std::vector<int>, int> getVocab(std::string text) {
+void updateVocab(std::string text, std::map<std::vector<int>, int> &vocab) {
     auto words = text | std::views::chunk_by([](char a, char b) {
                      return !std::isspace(static_cast<unsigned char>(a)) &&
                             !std::isspace(static_cast<unsigned char>(b));
@@ -41,12 +41,9 @@ std::map<std::vector<int>, int> getVocab(std::string text) {
                  }) |
                  std::ranges::to<std::vector<std::vector<int>>>();
 
-    std::map<std::vector<int>, int> vocab;
     for (const auto &word : words) {
         vocab[word] += 1;
     }
-
-    return vocab;
 }
 
 std::optional<std::string> readJsonEntry(std::string input) {
@@ -62,18 +59,22 @@ std::optional<std::string> readJsonEntry(std::string input) {
 }
 
 int main() {
-    std::ifstream file("example_input/single.json");
+    std::ifstream file("example_input/stackexchange.jsonl");
     if (!file.is_open()) {
         std::cerr << "Could not open file." << std::endl;
         return 1;
     }
-    std::string input;
-    std::getline(file, input);
 
-    std::string text = readJsonEntry(input).value();
-    auto vocab = getVocab(text);
+    std::string input, text;
+    std::map<std::vector<int>, int> vocab;
+    const int LINE_COUNT = 1000;
+    for (size_t i = 0; i < LINE_COUNT; ++i) {
+        std::getline(file, input);
+        text = readJsonEntry(input).value();
+        updateVocab(text, vocab);
+    }
 
-    const int max_tokens = 0xFFFF + 128;
+    const int max_tokens = 0xFFFF + 5000;
     BPE::initStats(vocab);
     while (BPE::getTokenCount() < max_tokens) {
         auto it = std::max_element(BPE::pairFreq.begin(), BPE::pairFreq.end(), [](const auto& a, const auto& b) {
