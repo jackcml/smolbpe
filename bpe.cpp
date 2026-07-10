@@ -28,9 +28,9 @@ void BPE::mergeVocab(std::pair<int, int> pair,
     BPE::tokenToString[mergedToken] = l + r;
 
     int mergeCount = 0;
-    std::set<std::vector<int>> newWordsWithPair;
-    std::map<std::pair<int, int>, int> newPairFreqs;
-    for (const auto &word : BPE::wordsWithPair[pair]) {
+    std::set<std::vector<int>> words = BPE::wordsWithPair[pair]; // snapshot
+    BPE::wordsWithPair.erase(pair); // pair no longer exists after this merge
+    for (const auto &word : words) {
         auto freq = vocab[word];
 
         // if pair in word, replace with unique token
@@ -43,11 +43,13 @@ void BPE::mergeVocab(std::pair<int, int> pair,
                 ++i; // skip the next token since it's merged
                 ++mergeCount;
 
-                if (i > 0) {
-                    --pairFreq[{word[i-1], word[i]}];
+                // for pair {a,b}, we're removing the left neighbor {x,a}
+                if (i >= 2) {
+                    --pairFreq[{word[i - 2], word[i - 1]}];
                 }
-                if (i + 2 < word.size()) {
-                    --pairFreq[{word[i+1], word[i+2]}];
+                // and the right neighbor {b,y}
+                if (i + 1 < word.size()) {
+                    --pairFreq[{word[i], word[i + 1]}];
                 }
             } else {
                 newWord.push_back(word[i]);
@@ -59,16 +61,18 @@ void BPE::mergeVocab(std::pair<int, int> pair,
             if (newWord[i - 1] == mergedToken || newWord[i] == mergedToken) {
                 std::pair<int, int> newPair = {newWord[i - 1], newWord[i]};
                 pairFreq[newPair] += freq;
-                newWordsWithPair.insert(newWord);
             }
         }
 
         vocab[newWord] += freq;
         vocab.erase(word);
-    }
 
-    pairFreq[pair] = 0; // all merged away
-    for (const auto &newWord: newWordsWithPair) {
-        wordsWithPair[pair].insert(newWord);
+        for (size_t i = 1; i < word.size(); ++i) {
+            wordsWithPair[{word[i - 1], word[i]}].erase(word);
+        }
+        // add the new word to all its pairs' sets
+        for (size_t i = 1; i < newWord.size(); ++i) {
+            wordsWithPair[{newWord[i - 1], newWord[i]}].insert(newWord);
+        }
     }
 }
