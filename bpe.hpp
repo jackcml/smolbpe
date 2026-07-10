@@ -22,6 +22,8 @@ class BPE {
   public:
     static inline std::map<std::pair<int, int>, int> pairFreq;
 
+    static void run(std::map<std::vector<int>, int> vocab, int max_tokens);
+
     static void initStats(std::map<std::vector<int>, int> vocab);
 
     static void mergeVocab(std::pair<int, int> pair,

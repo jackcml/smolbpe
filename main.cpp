@@ -3,7 +3,6 @@
 #include <map>
 #include <optional>
 #include <string>
-#include <utility>
 
 #include "bpe.hpp"
 #include "glaze/glaze.hpp" // IWYU pragma: keep
@@ -75,21 +74,7 @@ int main() {
     }
 
     const int max_tokens = 0xFFFF + 5000;
-    BPE::initStats(vocab);
-    while (BPE::getTokenCount() < max_tokens) {
-        auto it = std::max_element(
-            BPE::pairFreq.begin(), BPE::pairFreq.end(),
-            [](const auto &a, const auto &b) { return a.second < b.second; });
-        if (it == BPE::pairFreq.end()) {
-            std::cout << "Exhausted possible merges at " << BPE::getTokenCount()
-                      << " tokens." << std::endl;
-            break;
-        }
-
-        auto &[pair, freq] = *it;
-        BPE::mergeVocab(pair, vocab);
-        BPE::pairFreq.erase(pair);
-    }
+    BPE::run(vocab, max_tokens);
 
     for (int i = 0x10000; i < BPE::getTokenCount(); ++i) {
         std::cout << BPE::getTokenString(i) << " ";

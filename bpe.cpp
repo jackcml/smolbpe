@@ -1,4 +1,6 @@
 #include "bpe.hpp"
+#include <algorithm>
+#include <iostream>
 
 void BPE::initStats(std::map<std::vector<int>, int> vocab) {
     for (const auto &[word, freq] : vocab) {
@@ -74,5 +76,23 @@ void BPE::mergeVocab(std::pair<int, int> pair,
         for (size_t i = 1; i < newWord.size(); ++i) {
             wordsWithPair[{newWord[i - 1], newWord[i]}].insert(newWord);
         }
+    }
+}
+
+void BPE::run(std::map<std::vector<int>, int> vocab, int max_tokens) {
+    BPE::initStats(vocab);
+    while (BPE::getTokenCount() < max_tokens) {
+        auto it = std::max_element(
+            BPE::pairFreq.begin(), BPE::pairFreq.end(),
+            [](const auto &a, const auto &b) { return a.second < b.second; });
+        if (it == BPE::pairFreq.end()) {
+            std::cout << "Exhausted possible merges at " << BPE::getTokenCount()
+                      << " tokens." << std::endl;
+            break;
+        }
+
+        auto &[pair, freq] = *it;
+        BPE::mergeVocab(pair, vocab);
+        BPE::pairFreq.erase(pair);
     }
 }
