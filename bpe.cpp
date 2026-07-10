@@ -80,19 +80,19 @@ void BPE::mergeVocab(std::pair<int, int> pair,
 }
 
 void BPE::run(std::map<std::vector<int>, int> vocab, int max_tokens) {
-    this->initStats(vocab);
-    while (this->getTokenCount() < max_tokens) {
+    initStats(vocab);
+    while (getTokenCount() < max_tokens) {
         auto it = std::max_element(
             m_pairFreq.begin(), m_pairFreq.end(),
             [](const auto &a, const auto &b) { return a.second < b.second; });
         if (it == m_pairFreq.end()) {
             std::cout << "Exhausted possible merges at "
-                      << this->getTokenCount() << " tokens." << std::endl;
+                      << getTokenCount() << " tokens." << std::endl;
             break;
         }
 
         auto &[pair, freq] = *it;
-        this->mergeVocab(pair, vocab);
+        mergeVocab(pair, vocab);
         m_pairFreq.erase(pair);
     }
 }
