@@ -1,9 +1,9 @@
 #include <map>
 #include <queue>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
-#include <set>
 
 struct TkPair {
     std::pair<int, int> pair;
@@ -17,7 +17,8 @@ class BPE {
     static inline int nextUniqueToken =
         0x10000; // start > all char values to prevent collisions
     static inline std::map<int, std::string> tokenToString;
-    static inline std::map<std::pair<int, int>, std::set<std::vector<int>>> wordsWithPair;
+    static inline std::map<std::pair<int, int>, std::set<std::vector<int>>>
+        wordsWithPair;
 
   public:
     static inline std::priority_queue<TkPair> statHeap;
@@ -25,8 +26,8 @@ class BPE {
 
     static void initStats(std::map<std::vector<int>, int> vocab);
 
-    static void
-    mergeVocab(std::pair<int, int> pair, std::map<std::vector<int>, int>& vocab);
+    static void mergeVocab(std::pair<int, int> pair,
+                           std::map<std::vector<int>, int> &vocab);
 
     static std::string getTokenString(int token) {
         if (token < 0x10000) {
