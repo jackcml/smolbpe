@@ -28,6 +28,7 @@ void BPE::mergeVocab(std::pair<int, int> pair,
         r = m_tokenToString[pair.second];
     }
     m_tokenToString[mergedToken] = l + r;
+    m_stringToToken[l + r] = mergedToken;
 
     int mergeCount = 0;
     std::set<std::vector<int>> words = m_wordsWithPair[pair]; // snapshot
@@ -97,4 +98,41 @@ void BPE::run(std::map<std::vector<int>, int> vocab, int max_tokens) {
         mergeVocab(pair, vocab);
         m_pairFreq.erase(pair);
     }
+}
+
+std::vector<int> BPE::tokenize(std::string text) {
+    // at current index, take maximum substring that has a corresponding token
+    std::vector<int> res;
+    size_t i = 0;
+    while (i < text.size()) {
+        std::basic_string<char> best = text.substr(i, 1);
+        for (size_t len = 2; len < text.size(); ++len) {
+            std::basic_string<char> substr = text.substr(i, len);
+            if (m_stringToToken.contains(substr)) {
+                best = substr;
+            } else {
+                break;
+            }
+        }
+        if (best.size() == 1) {
+            res.push_back(text[i]);
+        } else {
+            res.push_back(m_stringToToken[best]);
+        }
+        i += best.size();
+    }
+
+    return res;
+}
+
+std::string BPE::detokenize(std::vector<int> tokens) {
+    std::string res;
+    for (const auto tk : tokens) {
+        if (m_tokenToString.contains(tk)) {
+            res += m_tokenToString[tk];
+        } else {
+            res += static_cast<char>(tk);
+        }
+    }
+    return res;
 }

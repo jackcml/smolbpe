@@ -20,6 +20,7 @@ class BPE {
     int m_nextUniqueToken =
         0x10000; // start > all char values to prevent collisions
     std::map<int, std::string> m_tokenToString;
+    std::map<std::string, int> m_stringToToken;
     std::map<std::pair<int, int>, std::set<std::vector<int>>> m_wordsWithPair;
     MutablePriorityMap<std::pair<int, int>, int, PairHash> m_pairFreq;
 
@@ -30,6 +31,9 @@ class BPE {
 
     void mergeVocab(std::pair<int, int> pair,
                     std::map<std::vector<int>, int> &vocab);
+
+    std::vector<int> tokenize(std::string text);
+    std::string detokenize(std::vector<int> tokens);
 
     std::string getTokenString(int token) {
         if (token < 0x10000) {

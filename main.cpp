@@ -66,7 +66,7 @@ int main() {
 
     std::string input, text;
     std::map<std::vector<int>, int> vocab;
-    const int LINE_COUNT = 1000;
+    const int LINE_COUNT = 10000;
     for (size_t i = 0; i < LINE_COUNT; ++i) {
         std::getline(file, input);
         text = readJsonEntry(input).value();
@@ -77,10 +77,13 @@ int main() {
     BPE bpe = BPE();
     bpe.run(vocab, max_tokens);
 
-    for (int i = 0x10000; i < bpe.getTokenCount(); ++i) {
-        std::cout << bpe.getTokenString(i) << " ";
+    auto testStr = "Can you pull in Leviathan with a fishhook?";
+    auto tokens = bpe.tokenize(testStr);
+    for (auto tk : tokens) {
+        std::cout << tk << " ";
     }
     std::cout << std::endl;
+    std::cout << bpe.detokenize(tokens) << std::endl;
 
     return 0;
 }
